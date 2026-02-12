@@ -45,3 +45,7 @@ files/
 create_dummy_resume.py
 dummy_resume.docx
 *.docx
+verify_api.py
+temp_resume.text
+test_suggestions.py
+
