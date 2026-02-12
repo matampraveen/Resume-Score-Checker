@@ -28,6 +28,11 @@ DEBUG = True
 
 ALLOWED_HOSTS = ['*']
 
+# Vercel Configuration
+if os.environ.get('VERCEL'):
+    ALLOWED_HOSTS = ['.vercel.app', '127.0.0.1', 'localhost']
+
+
 
 
 
@@ -93,13 +98,25 @@ WSGI_APPLICATION = "resume_screener.wsgi.application"
 # https://docs.djangoproject.com/en/4.1/ref/settings/#databases
 import os
 
-if os.environ.get('RENDER'):
-    DATABASES = {
-        "default": {
-            "ENGINE": "django.db.backends.sqlite3",
-            "NAME": BASE_DIR / "db.sqlite3",
+if os.environ.get('RENDER') or os.environ.get('VERCEL'):
+    if os.environ.get('MONGO_URI'):
+       DATABASES = {
+            "default": {
+                "ENGINE": "djongo",
+                "NAME": os.environ.get('MONGO_DB_NAME', 'resume_screener_db'),
+                "ENFORCE_SCHEMA": False,
+                "CLIENT": {
+                    "host": os.environ.get('MONGO_URI'),
+                }
+            }
         }
-    }
+    else:
+        DATABASES = {
+            "default": {
+                "ENGINE": "django.db.backends.sqlite3",
+                "NAME": BASE_DIR / "db.sqlite3",
+            }
+        }
 else:
     DATABASES = {
         "default": {
@@ -147,7 +164,11 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/4.1/howto/static-files/
 
 STATIC_URL = "static/"
-STATIC_ROOT = BASE_DIR / "staticfiles"
+if os.environ.get('VERCEL'):
+    STATIC_ROOT = BASE_DIR / "staticfiles_build"
+else:
+    STATIC_ROOT = BASE_DIR / "staticfiles"
+    
 STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
 # Default primary key field type

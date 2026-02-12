@@ -3,14 +3,23 @@ import nltk
 from nltk.corpus import stopwords
 from nltk.stem import WordNetLemmatizer
 
+import os
+
 # Download NLTK resources if not present
+if os.environ.get('VERCEL'):
+    nltk.data.path.append('/tmp')
+    download_dir = '/tmp'
+else:
+    download_dir = None # Default local behavior
+
 try:
     nltk.data.find('corpora/stopwords')
     nltk.data.find('corpora/wordnet')
+    nltk.data.find('corpora/omw-1.4')
 except LookupError:
-    nltk.download('stopwords')
-    nltk.download('wordnet')
-    nltk.download('omw-1.4')
+    nltk.download('stopwords', download_dir=download_dir)
+    nltk.download('wordnet', download_dir=download_dir)
+    nltk.download('omw-1.4', download_dir=download_dir)
 
 lemmatizer = WordNetLemmatizer()
 stop_words = set(stopwords.words('english'))
