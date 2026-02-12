@@ -23,9 +23,13 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = "django-insecure-&l!sg#_8w!1(wr34+#4xb2-k9m_#o1ll=ie!yu__6popcdwk#3"
 
 # SECURITY WARNING: don't run with debug turned on in production!
+# SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']
+
+
+
 
 
 # Application definition
@@ -36,6 +40,7 @@ INSTALLED_APPS = [
     "django.contrib.contenttypes",
     "django.contrib.sessions",
     "django.contrib.messages",
+    "whitenoise.runserver_nostatic", # Add whitenoise before staticfiles
     "django.contrib.staticfiles",
     # Third party apps
     "rest_framework",
@@ -51,8 +56,10 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
+
     "corsheaders.middleware.CorsMiddleware",
     "django.middleware.security.SecurityMiddleware",
+    "whitenoise.middleware.WhiteNoiseMiddleware", # Add whitenoise middleware
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -84,16 +91,25 @@ WSGI_APPLICATION = "resume_screener.wsgi.application"
 
 # Database
 # https://docs.djangoproject.com/en/4.1/ref/settings/#databases
+import os
 
-DATABASES = {
-    "default": {
-        "ENGINE": "djongo",
-        "NAME": "resume_screener_db",
-        "CLIENT": {
-            "host": "mongodb://localhost:27017/",
+if os.environ.get('RENDER'):
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.sqlite3",
+            "NAME": BASE_DIR / "db.sqlite3",
         }
     }
-}
+else:
+    DATABASES = {
+        "default": {
+            "ENGINE": "djongo",
+            "NAME": "resume_screener_db",
+            "CLIENT": {
+                "host": "mongodb://localhost:27017/",
+            }
+        }
+    }
 
 
 # Password validation
@@ -131,6 +147,8 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/4.1/howto/static-files/
 
 STATIC_URL = "static/"
+STATIC_ROOT = BASE_DIR / "staticfiles"
+STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.1/ref/settings/#default-auto-field
