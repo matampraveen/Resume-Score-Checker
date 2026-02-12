@@ -1,0 +1,61 @@
+{% extends "web/base.html" %}
+
+{% block title %}Login{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-4">
+        <div class="card mt-5">
+            <div class="card-header text-center">
+                <h3>Login</h3>
+            </div>
+            <div class="card-body">
+                <form id="loginForm">
+                    <div class="mb-3">
+                        <label class="form-label">Username</label>
+                        <input type="text" class="form-control" id="username" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Password</label>
+                        <input type="password" class="form-control" id="password" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100">Login</button>
+                    <div id="error-msg" class="text-danger mt-2 text-center"></div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.getElementById('loginForm').addEventListener('submit', async function (e) {
+        e.preventDefault();
+        const username = document.getElementById('username').value;
+        const password = document.getElementById('password').value;
+        const errorMsg = document.getElementById('error-msg');
+
+        try {
+            const response = await fetch('/api/auth/login/', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, password })
+            });
+
+            const data = await response.json();
+
+            if (response.ok) {
+                localStorage.setItem('access_token', data.access);
+                localStorage.setItem('refresh_token', data.refresh);
+                window.location.href = '/dashboard/';
+            } else {
+                errorMsg.textContent = data.detail || 'Login failed';
+            }
+        } catch (err) {
+            errorMsg.textContent = 'Network error';
+        }
+    });
+</script>
+{% endblock %}

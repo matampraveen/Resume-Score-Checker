@@ -1,0 +1,90 @@
+AI-Powered Resume Screening System - Architecture Document
+1. High-Level Architecture
+The system follows a typical Model-View-Controller (MVC) pattern (Django MTV) with a Service-Repository layer for the ML logic.
+
+⚠️ Failed to render Mermaid diagram: Parse error on line 6
+graph TD
+    Client[Client Browser / Mobile] -->|HTTP/JSON| Nginx[Web Server / Load Balancer]
+    Nginx -->|WSGI| Django[Django Backend]
+    
+    subgraph "Backend Services"
+        Django --> Auth[Auth Service (JWT)]
+        Django --> Jobs[Job Management Service]
+        Django --> Upload[Resume Upload Service]
+        Django --> Screen[Screening Service]
+        
+        Screen --> ML[ML Engine (TF-IDF / Cosine)]
+    end
+    
+    subgraph "Data Layer"
+        Django -->|Djongo| MongoDB[(MongoDB Database)]
+        MongoDB --> Col1[Users]
+        MongoDB --> Col2[Jobs]
+        MongoDB --> Col3[Resumes]
+        MongoDB --> Col4[ScreeningResults]
+    end
+2. Component Detail
+2.1 Backend (Django + DRF)
+The backend is structured into modular apps to ensure separation of concerns:
+
+apps.accounts: Handles Custom User creation, Role management (Admin/Recruiter), and JWT Authentication.
+apps.jobs: Manages Job Postings. CRUD operations.
+apps.resumes: Handles file uploads. Uses apps.resumes.utils to extract text from PDF/DOCX upon upload.
+apps.screening: The bridge between Data and ML. It fetches Resumes and Jobs, calls the ml_engine, and stores results.
+apps.web: Serves the Server-Side Rendered (SSR) UI using Django Templates.
+2.2 Database (MongoDB)
+We use MongoDB via djongo connector.
+
+Why NoSQL? Resume data (parsed text, metadata) can be unstructured. Screening results might evolve to include complex JSON analytics without schema migrations.
+Collections:
+auth_user: Extends abstract user.
+api_resume: Stores file path and a large parsed_text string.
+api_screeningresult: Links JobID, ResumeID, and Score.
+2.3 ML / NLP Pipeline (ml_engine)
+A dedicated Python package decoupled from Django models. Flow:
+
+Input: Job Description text + List of Resume texts.
+Preprocessing: Lowercase -> Remove URLs/Special Chars -> Tokenize -> Remove Stopwords -> Lemmatize.
+Vectorization: TfidfVectorizer converts text to numerical vectors.
+Ranking: cosine_similarity calculates the angle between the Job Vector and each Resume Vector.
+Output: List of scores (0.0 to 1.0).
+3. Resume Upload & Screening Lifecycle
+ML
+DB
+API
+User
+ML
+DB
+API
+User
+POST /api/resumes/ (File)
+Extract Text (PDF/DOCX)
+Save Resume + Parsed Text
+Resume ID
+POST /api/screening/screen/{job_id}/
+Fetch Job & All Resumes
+Data
+rank_resumes(job_text, resume_texts)
+Preprocess -> TF-IDF -> Cosine Sim
+[Scores]
+Upsert ScreeningResult
+JSON List of Ranked Candidates
+4. Authentication Flow (JWT)
+Login: User posts username/password to /api/auth/login/.
+Token: Server validates credential and issues access (short-lived) and refresh (long-lived) tokens.
+Protection: All sensitive endpoints (Upload, Create Job) require Authorization: Bearer <access_token> header.
+Frontend: Stores token in localStorage and attaches it to Fetch requests.
+5. Directory Structure & Separation of Concerns
+d:\PROJECT-AI\
+├── apps\                   # Django Apps (Domain Logic)
+│   ├── accounts\           # Auth domain
+│   ├── jobs\               # Job domain
+│   ├── resumes\            # File handling domain
+│   ├── screening\          # Orchestration domain
+│   └── web\                # UI domain
+├── ml_engine\              # Pure Python ML Logic (No Django dependencies)
+│   ├── model.py            # Ranking Class
+│   └── preprocess.py       # Text cleaning
+├── resume_screener\        # Project Configuration
+└── manage.py
+This structure ensures that the ML Engine can be tested independently of the web server and the Web App is just a consumer of the APIs.

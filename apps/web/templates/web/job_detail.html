@@ -1,0 +1,163 @@
+{% extends "web/base.html" %}
+
+{% block title %}Job Details{% endblock %}
+
+{% block content %}
+<div class="mt-4">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="/dashboard/">Dashboard</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Job Details</li>
+        </ol>
+    </nav>
+
+    <div class="card mb-4">
+        <div class="card-body">
+            <h2 id="job-title">Loading...</h2>
+            <p id="job-desc" class="text-muted"></p>
+            <p><strong>Skills:</strong> <span id="job-skills"></span></p>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">Actions</div>
+                <div class="card-body">
+                    <h5>1. Upload Resume</h5>
+                    <form id="uploadForm">
+                        <div class="mb-3">
+                            <input type="text" class="form-control mb-2" id="candidate" placeholder="Candidate Name">
+                            <input type="file" class="form-control" id="resumeFile" accept=".pdf,.docx" required>
+                        </div>
+                        <button type="submit" class="btn btn-outline-primary w-100">Upload</button>
+                    </form>
+                    <hr>
+                    <h5>2. Screening</h5>
+                    <button onclick="runScreening()" class="btn btn-success w-100">Run AI Screening</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">Screened Candidates (Ranked)</div>
+                <div class="card-body">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Candidate</th>
+                                <th>Match Score</th>
+                                <th>Status</th>
+                                <th>Date</th>
+                            </tr>
+                        </thead>
+                        <tbody id="results-table">
+                            <!-- Results here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    const jobId = window.location.pathname.split('/')[2];
+
+    async function loadJobDetails() {
+        const response = await fetch(`/api/jobs/${jobId}/`);
+        const job = await response.json();
+        document.getElementById('job-title').textContent = job.title;
+        document.getElementById('job-desc').textContent = job.description;
+        document.getElementById('job-skills').textContent = job.required_skills;
+
+        loadResults();
+    }
+
+    async function loadResults() {
+        const response = await fetch(`/api/screening/results/?job_id=${jobId}`);
+        const results = await response.json();
+
+        const tbody = document.getElementById('results-table');
+        if (results.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="4">No screening results yet. Upload resumes and click "Run AI Screening".</td></tr>';
+            return;
+        }
+
+        tbody.innerHTML = results.map(r => `
+        <tr>
+            <td>${r.resume.candidate_name}</td>
+            <td>
+                <div class="progress" style="height: 25px;">
+                    <div class="progress-bar ${r.score > 0.7 ? 'bg-success' : (r.score > 0.4 ? 'bg-warning' : 'bg-danger')}" 
+                         role="progressbar" 
+                         style="width: ${r.score * 100}%">
+                        ${(r.score * 100).toFixed(1)}%
+                    </div>
+                </div>
+            </td>
+            <td>
+                ${r.score > 0.7 ? 'Recommended' : (r.score > 0.4 ? 'Review' : 'Not Relevant')}
+            </td>
+            <td>
+                ${new Date(r.resume.uploaded_at).toLocaleDateString()} ${new Date(r.resume.uploaded_at).toLocaleTimeString()}
+            </td>
+        </tr>
+    `).join('');
+    }
+
+    document.getElementById('uploadForm').addEventListener('submit', async function (e) {
+        e.preventDefault();
+        const formData = new FormData();
+        formData.append('candidate_name', document.getElementById('candidate').value);
+        formData.append('file', document.getElementById('resumeFile').files[0]);
+
+        try {
+            const response = await fetch('/api/resumes/', {
+                method: 'POST',
+                body: formData
+            });
+
+            if (response.ok) {
+                alert('Resume Uploaded!');
+                document.getElementById('uploadForm').reset();
+            } else {
+                alert('Upload failed');
+            }
+        } catch (err) {
+            console.error(err);
+        }
+    });
+
+    async function runScreening() {
+        try {
+            const btn = document.querySelector('button[onclick="runScreening()"]');
+            btn.disabled = true;
+            btn.textContent = "Processing...";
+
+            const response = await fetch(`/api/screening/screen/${jobId}/`, {
+                method: 'POST'
+            });
+
+            if (response.ok) {
+                await loadResults();
+                alert('Screening Completed!');
+            } else {
+                alert('Screening failed');
+            }
+
+        } catch (err) {
+            console.error(err);
+        } finally {
+            const btn = document.querySelector('button[onclick="runScreening()"]');
+            btn.disabled = false;
+            btn.textContent = "Run AI Screening";
+        }
+    }
+
+    loadJobDetails();
+</script>
+{% endblock %}

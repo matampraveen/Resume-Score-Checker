@@ -1,0 +1,174 @@
+{% extends "web/base.html" %}
+
+{% block title %}Instant Document Screening{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row text-center mb-5">
+        <div class="col">
+            <h1 class="display-4">Instant Document Screening</h1>
+            <p class="lead">AI-Powered Resume Analysis</p>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Input Form -->
+        <div class="col-md-6 border-end">
+            <h3>1. Enter Details</h3>
+            <form id="instant-screen-form">
+                <div class="mb-3">
+                    <label for="job_description" class="form-label">Job Description</label>
+                    <textarea class="form-control" id="job_description" rows="10"
+                        placeholder="Paste the job description here..." required></textarea>
+                </div>
+
+                <div class="mb-3">
+                    <label for="resume_file" class="form-label">Upload Resume (PDF/DOCX/TXT)</label>
+                    <input type="file" class="form-control" id="resume_file" accept=".pdf,.docx,.txt" required>
+                </div>
+
+                <div class="d-grid gap-2">
+                    <button type="submit" class="btn btn-primary btn-lg">Calculate Match Score</button>
+                </div>
+                <!-- <div class="mt-3 text-center">
+                    <a href="/dashboard/" class="text-muted">Go to Dashboard</a>
+                </div> -->
+            </form>
+        </div>
+
+        <!-- Results Section -->
+        <div class="col-md-6 d-flex align-items-center justify-content-center">
+            <div id="result-container" class="text-center w-100" style="display: none;">
+                <h3>Match Result</h3>
+                <div class="display-1 fw-bold mt-3" id="score-display">0%</div>
+                <div class="progress mt-3" style="height: 30px;">
+                    <div id="score-bar" class="progress-bar" role="progressbar" style="width: 0%"></div>
+                </div>
+                <p class="mt-3 lead" id="score-message"></p>
+
+                <div id="suggestions-box" class="mt-4 text-start" style="display: none;">
+                    <div class="alert alert-light border shadow-sm">
+                        <h5 class="alert-heading"><i class="bi bi-lightbulb"></i> Suggestions to Improve Score</h5>
+                        <p class="mb-2">Consider adding these missing keywords found in the job description:</p>
+                        <ul id="suggestions-list" class="mb-0 text-danger fw-bold">
+                            <!-- Suggestions will appear here -->
+                        </ul>
+                    </div>
+                </div>
+
+                <button class="btn btn-outline-secondary mt-4" onclick="resetForm()">Check Another</button>
+            </div>
+
+            <div id="placeholder-container" class="text-center text-muted">
+                <i class="bi bi-arrow-left-circle" style="font-size: 3rem;"></i>
+                <p class="mt-2">Fill out the form to see the magic happen.</p>
+            </div>
+
+            <div id="loading-container" class="text-center" style="display: none;">
+                <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <p class="mt-3">Analyzing documents...</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.getElementById('instant-screen-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        // UI Updates
+        document.getElementById('placeholder-container').style.display = 'none';
+        document.getElementById('result-container').style.display = 'none';
+        document.getElementById('loading-container').style.display = 'block';
+
+        const jobDesc = document.getElementById('job_description').value;
+        const resumeFile = document.getElementById('resume_file').files[0];
+
+        const formData = new FormData();
+        formData.append('job_description', jobDesc);
+        formData.append('resume', resumeFile);
+
+        try {
+            const response = await fetch('/api/screening/instant/', {
+                method: 'POST',
+                body: formData
+            });
+
+            const data = await response.json();
+
+            if (response.ok) {
+                showResult(data.score * 100, data.missing_keywords);
+            } else {
+                alert(data.error || 'An error occurred');
+                resetUI();
+            }
+        } catch (err) {
+            console.error(err);
+            alert('Failed to connect to the server');
+            resetUI();
+        }
+    });
+
+    function showResult(score, suggestions = []) {
+        document.getElementById('loading-container').style.display = 'none';
+        document.getElementById('result-container').style.display = 'block';
+
+        const scoreDisplay = document.getElementById('score-display');
+        const scoreBar = document.getElementById('score-bar');
+        const message = document.getElementById('score-message');
+
+        // Show/Hide Suggestions
+        const suggestionsBox = document.getElementById('suggestions-box');
+        const suggestionsList = document.getElementById('suggestions-list');
+
+        if (suggestions && suggestions.length > 0) {
+            suggestionsBox.style.display = 'block';
+            suggestionsList.innerHTML = suggestions.map(kw => `<li>${kw}</li>`).join('');
+        } else {
+            suggestionsBox.style.display = 'none';
+        }
+
+        // Animate Score
+        let current = 0;
+        const timer = setInterval(() => {
+            current += 1;
+            if (current >= score) {
+                current = score;
+                clearInterval(timer);
+            }
+            scoreDisplay.textContent = current.toFixed(1) + '%';
+            scoreBar.style.width = current + '%';
+
+            // Color Coding
+            if (current > 70) {
+                scoreBar.className = 'progress-bar bg-success';
+                scoreDisplay.classList.add('text-success');
+                message.textContent = "Excellent Match!";
+            } else if (current > 40) {
+                scoreBar.className = 'progress-bar bg-warning';
+                scoreDisplay.classList.remove('text-success', 'text-danger');
+                scoreDisplay.classList.add('text-warning');
+                message.textContent = "Potential Match - Review Required";
+            } else {
+                scoreBar.className = 'progress-bar bg-danger';
+                scoreDisplay.classList.remove('text-success', 'text-warning');
+                scoreDisplay.classList.add('text-danger');
+                message.textContent = "Low Relevance";
+            }
+        }, 10);
+    }
+
+    function resetForm() {
+        document.getElementById('instant-screen-form').reset();
+        resetUI();
+    }
+
+    function resetUI() {
+        document.getElementById('loading-container').style.display = 'none';
+        document.getElementById('result-container').style.display = 'none';
+        document.getElementById('placeholder-container').style.display = 'block';
+    }
+</script>
+{% endblock %}

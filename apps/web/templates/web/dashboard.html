@@ -1,0 +1,52 @@
+{% extends "web/base.html" %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mt-4">
+    <h2>My Job Postings</h2>
+    <a href="/jobs/create/" class="btn btn-primary">Create New Job</a>
+</div>
+
+<div class="row mt-4" id="job-list">
+    <!-- Jobs will be populated here -->
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    async function loadJobs() {
+        // const token = localStorage.getItem('access_token');
+        // if (!token) return window.location.href = '/login/';
+
+        const response = await fetch('/api/jobs/', {
+            headers: {
+                // 'Authorization': `Bearer ${token}` 
+            }
+        });
+
+        if (response.ok) {
+            const jobs = await response.json();
+            const container = document.getElementById('job-list');
+            container.innerHTML = jobs.map(job => `
+            <div class="col-md-4 mb-3">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <h5 class="card-title">${job.title}</h5>
+                        <p class="card-text">${job.description.substring(0, 100)}...</p>
+                        <a href="/jobs/${job.id}/" class="btn btn-outline-primary">View Candidates</a>
+                    </div>
+                    <div class="card-footer text-muted">
+                        ${new Date(job.created_at).toLocaleDateString()}
+                    </div>
+                </div>
+            </div>
+        `).join('');
+        } else {
+            alert('Failed to load jobs');
+        }
+    }
+    loadJobs();
+</script>
+{% endblock %}

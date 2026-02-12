@@ -1,0 +1,14 @@
+django>=4.0,<4.2
+djongo
+pymongo>=3.12.0,<4.0.0
+djangorestframework
+djangorestframework-simplejwt
+django-cors-headers
+scikit-learn
+pandas
+numpy
+nltk
+python-docx
+pdfminer.six
+drf-yasg
+requests

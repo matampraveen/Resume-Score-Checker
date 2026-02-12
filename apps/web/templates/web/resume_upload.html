@@ -1,0 +1,49 @@
+{% extends "web/base.html" %}
+
+{% block title %}Upload Resume{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center mt-5">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h3>Upload Resume</h3>
+            </div>
+            <div class="card-body">
+                <form id="upload-form">
+                    <div class="mb-3">
+                        <label for="candidate_name" class="form-label">Candidate Name</label>
+                        <input type="text" class="form-control" id="candidate_name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="file" class="form-label">Resume File (PDF/DOCX)</label>
+                        <input type="file" class="form-control" id="file" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Upload</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.getElementById('upload-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const formData = new FormData();
+        formData.append('candidate_name', document.getElementById('candidate_name').value);
+        formData.append('file', document.getElementById('file').files[0]);
+
+        const response = await fetch('/api/resumes/', {
+            method: 'POST',
+            body: formData
+        });
+
+        if (response.ok) {
+            alert('Resume uploaded successfully!');
+            window.location.href = '/dashboard/';
+        } else {
+            alert('Upload failed');
+        }
+    });
+</script>
+{% endblock %}
