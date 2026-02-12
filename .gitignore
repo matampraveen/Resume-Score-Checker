@@ -1,0 +1,38 @@
+# Python & Django
+__pycache__/
+*.py[cod]
+*$py.class
+*.log
+local_settings.py
+db.sqlite3
+db.sqlite3-journal
+
+# Virtual Environment
+venv/
+env/
+.env
+
+# User Uploaded Content & Generated Files
+# (These should NOT be in version control to protect privacy and save space)
+media/
+files/
+resumes/
+docs/
+*.docx
+*.pdf
+start_script.bat
+
+# Temporary Test Scripts
+test_*.py
+create_dummy_resume.py
+dummy_resume.docx
+temp_resume.txt
+verify_api.py
+
+# Editor Configuration
+.vscode/
+.idea/
+
+# OS Files
+.DS_Store
+Thumbs.db
