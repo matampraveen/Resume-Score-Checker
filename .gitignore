@@ -36,3 +36,12 @@ verify_api.py
 # OS Files
 .DS_Store
 Thumbs.db
+
+
+
+docs/
+resumes/
+files/
+create_dummy_resume.py
+dummy_resume.docx
+*.docx

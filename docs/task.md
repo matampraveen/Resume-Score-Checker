@@ -1,2 +1,0 @@
-    - [x] Generate Complete Technical Report PDF <!-- id: 29 -->
-    - [x] Generate Interview & Portfolio Pack PDF <!-- id: 30 -->
