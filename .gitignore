@@ -46,6 +46,6 @@ create_dummy_resume.py
 dummy_resume.docx
 *.docx
 verify_api.py
-temp_resume.text
+temp_resume.txt
 test_suggestions.py
 
