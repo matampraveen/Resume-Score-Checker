@@ -12,7 +12,9 @@ https://docs.djangoproject.com/en/4.1/ref/settings/
 
 from pathlib import Path
 import os
+import os
 import certifi
+import ssl
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -121,6 +123,8 @@ if os.environ.get('RENDER') or os.environ.get('VERCEL'):
                 "CLIENT": {
                     "host": os.environ.get('MONGO_URI'),
                     "tlsCAFile": certifi.where(),
+                    "ssl": True,
+                    "ssl_cert_reqs": ssl.CERT_NONE,
                 }
             }
         }
