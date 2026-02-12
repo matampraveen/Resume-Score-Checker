@@ -32,6 +32,18 @@ ALLOWED_HOSTS = ['*']
 if os.environ.get('VERCEL'):
     ALLOWED_HOSTS = ['.vercel.app', '127.0.0.1', 'localhost']
 
+# Render Configuration
+if os.environ.get('RENDER'):
+    ALLOWED_HOSTS = [] # Render handles this, but good to be explicit if needed. Usually ['*'] or specific domain.
+    RENDER_EXTERNAL_HOSTNAME = os.environ.get('RENDER_EXTERNAL_HOSTNAME')
+    if RENDER_EXTERNAL_HOSTNAME:
+        ALLOWED_HOSTS.append(RENDER_EXTERNAL_HOSTNAME)
+
+# NLTK Data Path for Render
+if os.environ.get('RENDER'):
+    import nltk
+    nltk.data.path.append(os.path.join(BASE_DIR, 'nltk_data'))
+
 
 
 

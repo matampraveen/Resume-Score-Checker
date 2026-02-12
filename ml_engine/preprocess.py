@@ -9,6 +9,11 @@ import os
 if os.environ.get('VERCEL'):
     nltk.data.path.append('/tmp')
     download_dir = '/tmp'
+elif os.environ.get('RENDER'):
+    # Render: Data should be in ./nltk_data (downloaded by build script)
+    # We add it to path in settings.py, but good to be safe here too.
+    nltk.data.path.append(os.path.join(os.getcwd(), 'nltk_data'))
+    download_dir = os.path.join(os.getcwd(), 'nltk_data')
 else:
     download_dir = None # Default local behavior
 
@@ -17,6 +22,7 @@ try:
     nltk.data.find('corpora/wordnet')
     nltk.data.find('corpora/omw-1.4')
 except LookupError:
+    print("NLTK data not found, downloading...")
     nltk.download('stopwords', download_dir=download_dir)
     nltk.download('wordnet', download_dir=download_dir)
     nltk.download('omw-1.4', download_dir=download_dir)
