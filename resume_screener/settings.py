@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/4.1/ref/settings/
 """
 
 from pathlib import Path
+import os
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -108,7 +109,6 @@ WSGI_APPLICATION = "resume_screener.wsgi.application"
 
 # Database
 # https://docs.djangoproject.com/en/4.1/ref/settings/#databases
-import os
 
 if os.environ.get('RENDER') or os.environ.get('VERCEL'):
     if os.environ.get('MONGO_URI'):
